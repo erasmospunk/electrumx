@@ -30,10 +30,12 @@ Anything coin-specific should go in this file and be subclassed where
 necessary for appropriate handling.
 '''
 
+import pow_hash
 from collections import namedtuple
 import re
 import struct
 from decimal import Decimal
+from functools import partial
 from hashlib import sha256
 
 import lib.util as util
@@ -1367,3 +1369,42 @@ class BitcoinAtom(Coin):
         '''Return the block header bytes'''
         deserializer = cls.DESERIALIZER(block)
         return deserializer.read_header(height, cls.BASIC_HEADER_SIZE)
+
+
+class Decred(Coin):
+    NAME = "Decred"
+    SHORTNAME = "DCR"
+    NET = "mainnet"
+    XPUB_VERBYTES = bytes.fromhex("02fda926")
+    XPRV_VERBYTES = bytes.fromhex("02fda4e8")
+    P2PKH_VERBYTE = bytes.fromhex("073f")
+    P2SH_VERBYTES = [bytes.fromhex("071a")]
+    WIF_BYTE = bytes.fromhex("230e")
+    GENESIS_HASH = ('298e5cc3d985bfe7f81dc135f360abe0'
+                    '89edd4396b86d2de66b0cef42b21d980')
+    BASIC_HEADER_SIZE = 180
+    DESERIALIZER = lib_tx.DeserializerDecred
+    DAEMON = daemon.DecredDaemon
+    ALLOW_ADVANCING_ERRORS = True
+    ENCODE_CHECK = partial(Base58.encode_check, hash_fn=pow_hash.blake256)
+    DECODE_CHECK = partial(Base58.decode_check, hash_fn=pow_hash.blake256)
+    TX_COUNT = 1
+    TX_COUNT_HEIGHT = 1
+    TX_PER_BLOCK = 1
+    IRC_PREFIX = "E_"
+    IRC_CHANNEL = "#electrum-dcr"
+    RPC_PORT = 9109
+    HEADER_HASH = pow_hash.blake256
+
+    @classmethod
+    def header_hash(cls, header):
+        '''Given a header return the hash.'''
+        return cls.HEADER_HASH(header)
+
+    @classmethod
+    def block(cls, raw_block, height):
+        '''Return a Block namedtuple given a raw block and its height.'''
+        if height > 0:
+            return super().block(raw_block, height)
+        else:
+            return Block(raw_block, cls.block_header(raw_block, height), [])

@@ -381,3 +381,22 @@ class LegacyRPCDaemon(Daemon):
         if isinstance(t, int):
             return t
         return timegm(strptime(t, "%Y-%m-%d %H:%M:%S %Z"))
+
+
+class DecredDaemon(Daemon):
+    def client_session(self):
+        '''An aiohttp client session.'''
+        connector = aiohttp.TCPConnector(verify_ssl=False)
+        return aiohttp.ClientSession(connector=connector)
+
+    async def _send_vector(self, method, params_iterable, replace_errs=False):
+        results = []
+        for p in params_iterable:
+            result = None
+            try:
+                result = await self._send_single(method, p)
+            except DaemonError as e:
+                if not replace_errs:
+                    raise e
+            results.append(result)
+        return results
