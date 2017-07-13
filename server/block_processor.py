@@ -540,7 +540,16 @@ class BlockProcessor(server.db.DB):
             # Spend the inputs
             if not tx.is_coinbase:
                 for txin in tx.inputs:
-                    cache_value = spend_utxo(txin.prev_hash, txin.prev_idx)
+                    try:
+                        cache_value = spend_utxo(txin.prev_hash, txin.prev_idx)
+                    except Exception as e:
+                        wrapped = ChainError("tx {} caused error: {}"
+                                             .format(hash_to_str(tx_hash), e))
+                        self.logger.warn(wrapped)
+                        if self.coin.ALLOW_ADVANCING_ERRORS:
+                            cache_value = b''
+                        else:
+                            raise wrapped
                     undo_info_append(cache_value)
                     add_hashX(cache_value[:-12])
 

@@ -72,6 +72,7 @@ class Coin(object):
     XPRV_VERBYTES = bytes('????', 'utf-8')
     ENCODE_CHECK = Base58.encode_check
     DECODE_CHECK = Base58.decode_check
+    ALLOW_ADVANCING_ERRORS = False
     # Peer discovery
     PEER_DEFAULT_PORTS = {'t': '50001', 's': '50002'}
     PEERS = []
